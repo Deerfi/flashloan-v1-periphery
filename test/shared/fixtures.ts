@@ -19,11 +19,10 @@ const overrides = {
 interface V2Fixture {
   token: Contract
   WETH: Contract
-  WETHPartner: Contract
   factory: Contract
   router: Contract
   pool: Contract
-  WETHPair: Contract
+  WETHPool: Contract
   receiver: Contract
 }
 
@@ -44,21 +43,20 @@ export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Pro
 
   // initialize V1
   await factory.createPool(token.address)
-  const pairAddress = await factory.getPool(token.address)
-  const pool = new Contract(pairAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
+  const tokenAddress = await factory.getPool(token.address)
+  const pool = new Contract(tokenAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
 
   await factory.createPool(WETH.address)
-  const WETHPairAddress = await factory.getPool(WETH.address)
-  const WETHPair = new Contract(WETHPairAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
+  const WETHAddress = await factory.getPool(WETH.address)
+  const WETHPool = new Contract(WETHAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
 
   return {
     token,
     WETH,
-    WETHPartner,
     factory,
     router: router01, // the default router, 01 had a minor bug
     pool,
-    WETHPair,
+    WETHPool,
     receiver
   }
 }

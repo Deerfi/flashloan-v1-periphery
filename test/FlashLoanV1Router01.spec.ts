@@ -25,21 +25,19 @@ describe('FlashLoanV1Router01', () => {
 
   let token: Contract
   let WETH: Contract
-  let WETHPartner: Contract
   let factory: Contract
   let router: Contract
   let pool: Contract
-  let WETHPair: Contract
+  let WETHPool: Contract
   let receiver: Contract
   beforeEach(async function() {
     const fixture = await loadFixture(v2Fixture)
     token = fixture.token
     WETH = fixture.WETH
-    WETHPartner = fixture.WETHPartner
     factory = fixture.factory
     router = fixture.router
     pool = fixture.pool
-    WETHPair = fixture.WETHPair
+    WETHPool = fixture.WETHPool
     receiver = fixture.receiver
   })
 
@@ -92,19 +90,19 @@ describe('FlashLoanV1Router01', () => {
           { ...overrides, value: ETHAmount }
         )
       )
-        .to.emit(WETHPair, 'Transfer')
+        .to.emit(WETHPool, 'Transfer')
         .withArgs(AddressZero, AddressZero, MINIMUM_LIQUIDITY)
-        .to.emit(WETHPair, 'Transfer')
+        .to.emit(WETHPool, 'Transfer')
         .withArgs(AddressZero, wallet.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-        .to.emit(WETHPair, 'Sync')
+        .to.emit(WETHPool, 'Sync')
         .withArgs(ETHAmount)
-        .to.emit(WETHPair, 'Mint')
+        .to.emit(WETHPool, 'Mint')
         .withArgs(
           router.address,
           ETHAmount
         )
 
-      expect(await WETHPair.balanceOf(wallet.address)).to.eq(expectedLiquidity.sub(MINIMUM_LIQUIDITY))
+      expect(await WETHPool.balanceOf(wallet.address)).to.eq(expectedLiquidity.sub(MINIMUM_LIQUIDITY))
     })
 
     async function addLiquidity(tokenAmount: BigNumber) {
@@ -145,11 +143,11 @@ describe('FlashLoanV1Router01', () => {
     it('removeLiquidityETH', async () => {
       const ETHAmount = expandTo18Decimals(1)
       await WETH.deposit({ value: ETHAmount })
-      await WETH.transfer(WETHPair.address, ETHAmount)
-      await WETHPair.mint(wallet.address, overrides)
+      await WETH.transfer(WETHPool.address, ETHAmount)
+      await WETHPool.mint(wallet.address, overrides)
 
       const expectedLiquidity = expandTo18Decimals(1)
-      await WETHPair.approve(router.address, MaxUint256)
+      await WETHPool.approve(router.address, MaxUint256)
       await expect(
         router.removeLiquidityETH(
           expectedLiquidity.sub(MINIMUM_LIQUIDITY),
@@ -158,22 +156,22 @@ describe('FlashLoanV1Router01', () => {
           overrides
         )
       )
-        .to.emit(WETHPair, 'Transfer')
-        .withArgs(wallet.address, WETHPair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
-        .to.emit(WETHPair, 'Transfer')
-        .withArgs(WETHPair.address, AddressZero, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
+        .to.emit(WETHPool, 'Transfer')
+        .withArgs(wallet.address, WETHPool.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
+        .to.emit(WETHPool, 'Transfer')
+        .withArgs(WETHPool.address, AddressZero, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
         .to.emit(WETH, 'Transfer')
-        .withArgs(WETHPair.address, router.address, ETHAmount.sub(1000))
-        .to.emit(WETHPair, 'Sync')
+        .withArgs(WETHPool.address, router.address, ETHAmount.sub(1000))
+        .to.emit(WETHPool, 'Sync')
         .withArgs(1000)
-        .to.emit(WETHPair, 'Burn')
+        .to.emit(WETHPool, 'Burn')
         .withArgs(
           router.address,
           ETHAmount.sub(1000),
           router.address
         )
 
-      expect(await WETHPair.balanceOf(wallet.address)).to.eq(0)
+      expect(await WETHPool.balanceOf(wallet.address)).to.eq(0)
       const totalSupplyWETH = await WETH.totalSupply()
       expect(await WETH.balanceOf(wallet.address)).to.eq(totalSupplyWETH.sub(1000))
     })
@@ -210,14 +208,14 @@ describe('FlashLoanV1Router01', () => {
     it('removeLiquidityETHWithPermit', async () => {
       const ETHAmount = expandTo18Decimals(1)
       await WETH.deposit({ value: ETHAmount })
-      await WETH.transfer(WETHPair.address, ETHAmount)
-      await WETHPair.mint(wallet.address, overrides)
+      await WETH.transfer(WETHPool.address, ETHAmount)
+      await WETHPool.mint(wallet.address, overrides)
 
       const expectedLiquidity = expandTo18Decimals(1)
 
-      const nonce = await WETHPair.nonces(wallet.address)
+      const nonce = await WETHPool.nonces(wallet.address)
       const digest = await getApprovalDigest(
-        WETHPair,
+        WETHPool,
         { owner: wallet.address, spender: router.address, value: expectedLiquidity.sub(MINIMUM_LIQUIDITY) },
         nonce,
         MaxUint256
@@ -275,26 +273,26 @@ describe('FlashLoanV1Router01', () => {
 
         const data = defaultAbiCoder.encode(
           ['address'],
-          [WETHPair.address]
+          [WETHPool.address]
         )
 
         await WETH.deposit({ value: ETHAmount })
-        await WETH.transfer(WETHPair.address, loanAmount)
+        await WETH.transfer(WETHPool.address, loanAmount)
         await WETH.transfer(receiver.address, premiumAmount)
         
         await expect(router.flashLoan(WETH.address, receiver.address, loanAmount, MaxUint256, data))
           .to.emit(WETH, 'Transfer')
-          .withArgs(WETHPair.address, receiver.address, loanAmount)
+          .withArgs(WETHPool.address, receiver.address, loanAmount)
           .to.emit(WETH, 'Transfer')
-          .withArgs(receiver.address, WETHPair.address, loanAmount.add(premiumAmount))
-          .to.emit(WETHPair, 'Sync')
+          .withArgs(receiver.address, WETHPool.address, loanAmount.add(premiumAmount))
+          .to.emit(WETHPool, 'Sync')
           .withArgs(loanAmount.add(premiumAmount))
-          .to.emit(WETHPair, 'FlashLoan')
+          .to.emit(WETHPool, 'FlashLoan')
           .withArgs(receiver.address, router.address, WETH.address, loanAmount, premiumAmount)
     
-          const reserve = await WETHPair.reserve()
+          const reserve = await WETHPool.reserve()
           expect(reserve).to.eq(loanAmount.add(premiumAmount))
-          expect(await WETH.balanceOf(WETHPair.address)).to.eq(loanAmount.add(premiumAmount))
+          expect(await WETH.balanceOf(WETHPool.address)).to.eq(loanAmount.add(premiumAmount))
           expect(await WETH.balanceOf(receiver.address)).to.eq(0)
           const totalSupplyToken = await WETH.totalSupply()
           expect(await WETH.balanceOf(wallet.address)).to.eq(totalSupplyToken.sub(loanAmount).sub(premiumAmount))
