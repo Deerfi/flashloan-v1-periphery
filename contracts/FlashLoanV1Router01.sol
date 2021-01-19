@@ -116,7 +116,6 @@ contract FlashLoanV1Router01 is IFlashLoanV1Router01 {
         bytes calldata data
     ) external virtual override ensure(deadline) {
         address pool = FlashLoanV1Library.poolFor(factory, token);
-        TransferHelper.safeTransferFrom(token, msg.sender, pool, amount);
         IFlashLoanV1Pool(pool).flashLoan(target, amount, data);
     }
 }
