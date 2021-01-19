@@ -5,33 +5,34 @@ import { deployContract } from 'ethereum-waffle'
 import { expandTo18Decimals } from './utilities'
 
 import FlashLoanV1Factory from './FlashLoanV1Factory.json'
-import IFlashLoanV1Pool from './IFlashLoanV1Pool.json'
+import IFlashLoanV1Pool from '../../build/IFlashLoanV1Pool.json'
 
 import ERC20 from '../../build/ERC20.json'
 import WETH9 from '../../build/WETH9.json'
 import FlashLoanV1Router01 from '../../build/FlashLoanV1Router01.json'
+import FlashLoanReceiver from '../../build/FlashLoanReceiver.json'
 
 const overrides = {
   gasLimit: 9999999
 }
 
-interface V2Fixture {
-  token0: Contract
-  token1: Contract
+interface Router01Fixture {
+  token: Contract
   WETH: Contract
-  WETHPartner: Contract
   factory: Contract
   router: Contract
   pool: Contract
-  WETHPair: Contract
+  WETHPool: Contract
+  receiver: Contract
 }
 
-export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<V2Fixture> {
+export async function router01Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<Router01Fixture> {
   // deploy tokens
-  const tokenA = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
-  const tokenB = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
+  const token = await deployContract(wallet, ERC20, [expandTo18Decimals(10005)])
   const WETH = await deployContract(wallet, WETH9)
-  const WETHPartner = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
+
+  // deploy receiver
+  const receiver = await deployContract(wallet, FlashLoanReceiver)
 
   // deploy factory
   const factory = await deployContract(wallet, FlashLoanV1Factory, [wallet.address])
@@ -40,26 +41,21 @@ export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Pro
   const router01 = await deployContract(wallet, FlashLoanV1Router01, [factory.address, WETH.address], overrides)
 
   // initialize V1
-  await factory.createPool(tokenA.address)
-  const pairAddress = await factory.getPool(tokenA.address, tokenB.address)
-  const pool = new Contract(pairAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
+  await factory.createPool(token.address)
+  const tokenAddress = await factory.getPool(token.address)
+  const pool = new Contract(tokenAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
 
-  const token0Address = await pool.token0()
-  const token0 = tokenA.address === token0Address ? tokenA : tokenB
-  const token1 = tokenA.address === token0Address ? tokenB : tokenA
-
-  await factory.createPool(WETH.address, WETHPartner.address)
-  const WETHPairAddress = await factory.getPool(WETH.address, WETHPartner.address)
-  const WETHPair = new Contract(WETHPairAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
+  await factory.createPool(WETH.address)
+  const WETHAddress = await factory.getPool(WETH.address)
+  const WETHPool = new Contract(WETHAddress, JSON.stringify(IFlashLoanV1Pool.abi), provider).connect(wallet)
 
   return {
-    token0,
-    token1,
+    token,
     WETH,
-    WETHPartner,
     factory,
     router: router01, // the default router, 01 had a minor bug
     pool,
-    WETHPair
+    WETHPool,
+    receiver
   }
 }

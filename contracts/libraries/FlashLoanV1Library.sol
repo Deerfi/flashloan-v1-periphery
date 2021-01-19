@@ -11,7 +11,7 @@ library FlashLoanV1Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token)),
-                hex'f1412df70981bb89e61badace884157e67dd6da0ad170e18ea50c7771cc0f9b0' // init code hash
+                hex'6c57ed802dc5d4d6ce04dc39f66e6d2a6cebf8b7efbc068ce7b0419f5ee4ade1' // init code hash
             ))));
     }
 }

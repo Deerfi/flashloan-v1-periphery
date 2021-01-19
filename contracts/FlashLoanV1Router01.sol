@@ -31,12 +31,6 @@ contract FlashLoanV1Router01 is IFlashLoanV1Router01 {
     }
 
     // **** ADD LIQUIDITY ****
-    function _checkPair(address token) internal virtual {
-        // create the pool if it doesn't exist yet
-        if (IFlashLoanV1Factory(factory).getPool(token) == address(0)) {
-            IFlashLoanV1Factory(factory).createPool(token);
-        }
-    }
     function addLiquidity(
         address token,
         uint amount,
@@ -71,7 +65,7 @@ contract FlashLoanV1Router01 is IFlashLoanV1Router01 {
         uint deadline
     ) public virtual override ensure(deadline) returns (uint amount) {
         address pool = FlashLoanV1Library.poolFor(factory, token);
-        IFlashLoanV1Pool(pool).transferFrom(msg.sender, pool, liquidity); // send liquidity to pool
+        IFlashLoanV1Pool(pool).transferFrom(msg.sender, pool, liquidity);
         amount = IFlashLoanV1Pool(pool).burn(to);
     }
     function removeLiquidityETH(
@@ -116,7 +110,6 @@ contract FlashLoanV1Router01 is IFlashLoanV1Router01 {
         bytes calldata data
     ) external virtual override ensure(deadline) {
         address pool = FlashLoanV1Library.poolFor(factory, token);
-        TransferHelper.safeTransferFrom(token, msg.sender, pool, amount);
         IFlashLoanV1Pool(pool).flashLoan(target, amount, data);
     }
 }
