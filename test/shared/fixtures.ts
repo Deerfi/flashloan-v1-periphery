@@ -16,7 +16,7 @@ const overrides = {
   gasLimit: 9999999
 }
 
-interface V2Fixture {
+interface router01Fixture {
   token: Contract
   WETH: Contract
   factory: Contract
@@ -26,11 +26,10 @@ interface V2Fixture {
   receiver: Contract
 }
 
-export async function v2Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<V2Fixture> {
+export async function router01Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<router01Fixture> {
   // deploy tokens
   const token = await deployContract(wallet, ERC20, [expandTo18Decimals(10005)])
   const WETH = await deployContract(wallet, WETH9)
-  const WETHPartner = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)])
 
   // deploy receiver
   const receiver = await deployContract(wallet, FlashLoanReceiver)
