@@ -6,7 +6,7 @@ import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
 import { ecsign } from 'ethereumjs-util'
 
 import { expandTo18Decimals, getApprovalDigest, mineBlock, MINIMUM_LIQUIDITY } from './shared/utilities'
-import { Router01Fixture } from './shared/fixtures'
+import { router01Fixture } from './shared/fixtures'
 
 chai.use(solidity)
 
@@ -31,7 +31,7 @@ describe('FlashLoanV1Router01', () => {
   let WETHPool: Contract
   let receiver: Contract
   beforeEach(async function() {
-    const fixture = await loadFixture(Router01Fixture)
+    const fixture = await loadFixture(router01Fixture)
     token = fixture.token
     WETH = fixture.WETH
     factory = fixture.factory
