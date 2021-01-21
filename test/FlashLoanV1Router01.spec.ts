@@ -316,7 +316,7 @@ describe('FlashLoanV1Router01', () => {
         await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
         const tx = await router.flashLoan(token.address, receiver.address, loanAmount, MaxUint256, data)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(73331)
+        expect(receipt.gasUsed).to.eq(73325)
       })
     })
   })
