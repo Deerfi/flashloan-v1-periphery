@@ -6,14 +6,14 @@ import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
 import "erc3156/contracts/interfaces/IERC3156FlashBorrower.sol";
 import "erc3156/contracts/interfaces/IERC3156FlashLender.sol";
-import './interfaces/IFlashBorrowerLike.sol';
+import './interfaces/IFlashLoanReceiver.sol';
 import './interfaces/IFlashLoanV1Router02.sol';
 import './libraries/FlashLoanV1Library.sol';
 import './libraries/SafeMath.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
-contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlashBorrowerLike {
+contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlashLoanReceiver {
     using SafeMath for uint;
 
     // CONSTANTS
@@ -142,7 +142,8 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
      */
     function flashFee(address token, uint256 amount) public view override returns (uint256) {
         require(getPoolAddress(token) != address(0), "Unsupported currency");
-        return amount.mul(5) / 10000;
+        uint feeInBips = IFlashLoanV1Factory(factory).feeInBips();
+        return amount.mul(feeInBips) / 10000;
     }
 
     /**
@@ -159,32 +160,32 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
         if (permissionedPoolAddress != poolAddress) permissionedPoolAddress = poolAddress; // access control
 
         bytes memory data = abi.encode(
-            msg.sender,
-            receiver,
-            token,
-            userData
+          msg.sender,
+          receiver,
+          userData
         );
         IFlashLoanV1Pool(poolAddress).flashLoan(address(this), amount, data);
         return true;
     }
 
-    /// @dev Deerfi flash loan callback. It sends the value borrowed to `receiver`, and takes it back plus a `flashFee` after the ERC3156 callback.
-    function deerfiV1Call(address sender, uint amount, bytes calldata data) external override {
-        // access control
-        require(msg.sender == permissionedPoolAddress, "only permissioned FlashLoanV1 pool can call");
-        require(sender == address(this), "only this contract may initiate");
+    /// @dev deerfi flash loan callback. It sends the amount borrowed to `receiver`, and takes it back plus a `flashFee` after the ERC3156 callback.
+    function executeOperation(
+        address token,
+        uint256 amount,
+        uint256 fee,
+        address sender,
+        bytes calldata data
+    )
+        external override returns (bool)
+    {
+        address poolAddress = getPoolAddress(token);
+        require(msg.sender == poolAddress, "Callbacks only allowed from deerfi V1 Pool");
+        require(sender == address(this), "Callbacks only initiated from this contract");
 
-        // decode data
-        (
-            address origin,
-            IERC3156FlashBorrower receiver,
-            address token,
-            bytes memory userData
-        ) = abi.decode(data, (address, IERC3156FlashBorrower, address, bytes));
+        (address origin, IERC3156FlashBorrower receiver, bytes memory userData) = 
+            abi.decode(data, (address, IERC3156FlashBorrower, bytes));
 
-        uint256 fee = flashFee(token, amount);
-        
-        // send the borrowed amount to the receiver
+        // Send the tokens to the original receiver using the ERC-3156 interface
         IERC20(token).transfer(address(receiver), amount);
         // do whatever the user wants
         require(
@@ -193,5 +194,7 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
         );
         // retrieve the borrowed amount plus fee from the receiver and send it to the deerfi pool
         IERC20(token).transferFrom(address(receiver), msg.sender, amount.add(fee));
+
+        return true;
     }
 }
