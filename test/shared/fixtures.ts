@@ -12,6 +12,7 @@ import WETH9 from '../../build/WETH9.json'
 import FlashLoanV1Router01 from '../../build/FlashLoanV1Router01.json'
 import FlashLoanV1Router02 from '../../build/FlashLoanV1Router02.json'
 import FlashLoanReceiver from '../../build/FlashLoanReceiver.json'
+import FlashLoanReceiver01 from '../../build/FlashLoanReceiver01.json'
 
 const overrides = {
   gasLimit: 9999999
@@ -33,7 +34,7 @@ export async function router01Fixture(provider: Web3Provider, [wallet]: Wallet[]
   const WETH = await deployContract(wallet, WETH9)
 
   // deploy receiver
-  const receiver = await deployContract(wallet, FlashLoanReceiver)
+  const receiver = await deployContract(wallet, FlashLoanReceiver01)
 
   // deploy factory
   const factory = await deployContract(wallet, FlashLoanV1Factory, [wallet.address])
