@@ -1,11 +1,8 @@
-# Uniswap V2
+# Deerfi V1
 
-[![Actions Status](https://github.com/Uniswap/uniswap-v2-periphery/workflows/CI/badge.svg)](https://github.com/Uniswap/uniswap-v2-periphery/actions)
-[![npm](https://img.shields.io/npm/v/@uniswap/v2-periphery?style=flat-square)](https://npmjs.com/package/@uniswap/v2-periphery)
+[![Actions Status](https://github.com/Deerfi/flashloan-v1-periphery/workflows/CI/badge.svg)](https://github.com/Deerfi/flashloan-v1-periphery/actions)
 
-In-depth documentation on Uniswap V2 is available at [uniswap.org](https://uniswap.org/docs).
-
-The built contract artifacts can be browsed via [unpkg.com](https://unpkg.com/browse/@uniswap/v2-periphery@latest/).
+In-depth documentation on Deerfi V1 is available at [deerfi.com](https://www.deerfi.com/docs).
 
 # Local Development
 
