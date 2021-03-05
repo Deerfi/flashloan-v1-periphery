@@ -7,20 +7,20 @@ import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 import "erc3156/contracts/interfaces/IERC3156FlashBorrower.sol";
 import "erc3156/contracts/interfaces/IERC3156FlashLender.sol";
 import './interfaces/IFlashLoanReceiver.sol';
-import './interfaces/IFlashLoanV1Router02.sol';
+import './interfaces/IFlashLoanV1Router.sol';
 import './libraries/FlashLoanV1Library.sol';
 import './libraries/SafeMath.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
-contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlashLoanReceiver {
+contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashLoanReceiver {
     using SafeMath for uint;
 
     // CONSTANTS
     bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
     // ACCESS CONTROL
-    // Only the `permissionedPairAddress` may call the `uniswapV2Call` function
+    // Only the `permissionedPairAddress` may call the `executeOperation` function
     address permissionedPoolAddress;
 
     address public immutable override factory;
@@ -112,21 +112,12 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
     }
 
     /**
-     * @dev Get the Deerfi Pool that will be used as the source of a loan.
-     * @param token The loan currency.
-     * @return The Deerfi V2 Pool that will be used as the source of the flash loan.
-     */
-    function getPoolAddress(address token) public view returns (address) {
-        return FlashLoanV1Library.poolFor(factory, token);
-    }
-
-    /**
      * @dev From ERC-3156. The amount of currency available to be lended.
      * @param token The loan currency.
      * @return The amount of `token` that can be borrowed.
      */
     function maxFlashLoan(address token) external view override returns (uint256) {
-        address poolAddress = getPoolAddress(token);
+        address poolAddress = FlashLoanV1Library.poolFor(factory, token);
         if (poolAddress != address(0)) {
             uint256 balance = IERC20(token).balanceOf(poolAddress);
             if (balance > 0) return balance - 1;
@@ -141,7 +132,7 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
      * @return The amount of `token` to be charged for the loan, on top of the returned principal.
      */
     function flashFee(address token, uint256 amount) public view override returns (uint256) {
-        require(getPoolAddress(token) != address(0), "Unsupported currency");
+        require(FlashLoanV1Library.poolFor(factory, token) != address(0), "Unsupported currency");
         uint feeInBips = IFlashLoanV1Factory(factory).feeInBips();
         return amount.mul(feeInBips) / 10000;
     }
@@ -153,8 +144,8 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
      * @param amount The amount of tokens lent.
      * @param userData A data parameter to be passed on to the `receiver` for any custom use.
      */
-    function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 amount, bytes calldata userData) external override returns(bool) {
-        address poolAddress = getPoolAddress(token);
+    function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 amount, bytes calldata userData) external override virtual returns(bool) {
+        address poolAddress = FlashLoanV1Library.poolFor(factory, token);
         require(poolAddress != address(0), "Unsupported currency");
 
         if (permissionedPoolAddress != poolAddress) permissionedPoolAddress = poolAddress; // access control
@@ -178,7 +169,7 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router02, IERC3156FlashLender, IFlas
     )
         external override returns (bool)
     {
-        address poolAddress = getPoolAddress(token);
+        address poolAddress = FlashLoanV1Library.poolFor(factory, token);
         require(msg.sender == poolAddress, "Callbacks only allowed from deerfi V1 Pool");
         require(sender == address(this), "Callbacks only initiated from this contract");
 
