@@ -2090,11 +2090,6 @@ end-of-stream@^1.0.0, end-of-stream@^1.1.0:
   dependencies:
     once "^1.4.0"
 
-erc3156@^0.4.7:
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/erc3156/-/erc3156-0.4.7.tgz#2bd4d63a28622d2d0f081125d08554423f03d425"
-  integrity sha512-NTsKnBXBTbdmExBOXLunt8yZQm7qr2DOhdg5EG7ZIW6A+qpNjpgw2ziDATVcuHs7Rk68LiiTs84gDpSu6mgTpg==
-
 errno@~0.1.1:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/errno/-/errno-0.1.7.tgz#4684d71779ad39af177e3f007996f7c67c852618"

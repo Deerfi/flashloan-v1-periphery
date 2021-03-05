@@ -15,8 +15,7 @@
     "contracts"
   ],
   "dependencies": {
-    "@uniswap/lib": "4.0.1-alpha",
-    "erc3156": "^0.4.7"
+    "@uniswap/lib": "4.0.1-alpha"
   },
   "devDependencies": {
     "@types/chai": "^4.2.6",
