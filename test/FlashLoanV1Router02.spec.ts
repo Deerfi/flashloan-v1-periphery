@@ -1,11 +1,10 @@
 import chai, { expect } from 'chai'
 import { Contract } from 'ethers'
-import { AddressZero, Zero, MaxUint256 } from 'ethers/constants'
+import { Zero } from 'ethers/constants'
 import { bigNumberify } from 'ethers/utils'
 import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
-import { ecsign } from 'ethereumjs-util'
 
-import { expandTo18Decimals, getApprovalDigest, mineBlock, MINIMUM_LIQUIDITY } from './shared/utilities'
+import { expandTo18Decimals, mineBlock } from './shared/utilities'
 import { V1Fixture } from './shared/fixtures'
 
 chai.use(solidity)
@@ -25,7 +24,6 @@ describe('FlashLoanV1Router02', () => {
 
   let token: Contract
   let WETH: Contract
-  let factory: Contract
   let router: Contract
   let pool: Contract
   let WETHPool: Contract
@@ -34,7 +32,6 @@ describe('FlashLoanV1Router02', () => {
     const fixture = await loadFixture(V1Fixture)
     token = fixture.token
     WETH = fixture.WETH
-    factory = fixture.factory
     router = fixture.router02
     pool = fixture.pool
     WETHPool = fixture.WETHPool
@@ -146,7 +143,7 @@ describe('FlashLoanV1Router02', () => {
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
       const tx = await receiver.flashBorrow(router.address, token.address, loanAmount)
       const receipt = await tx.wait()
-      expect(receipt.gasUsed).to.eq(228552)
+      expect(receipt.gasUsed).to.eq(228854)
     })
   })
 })

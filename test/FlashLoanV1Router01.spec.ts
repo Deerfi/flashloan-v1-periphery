@@ -248,8 +248,7 @@ describe('FlashLoanV1Router01', () => {
 
       it('gas', async () => {
         const loanAmount = expandTo18Decimals(10000)
-    
-        // ensure that setting price{0,1}CumulativeLast for the first time doesn't affect our gas math
+
         await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
         await pool.sync(overrides)
 
@@ -332,7 +331,6 @@ describe('FlashLoanV1Router01', () => {
           const loanAmount = expandTo18Decimals(10000)
           const premiumAmount = expandTo18Decimals(5)
       
-          // ensure that setting price{0,1}CumulativeLast for the first time doesn't affect our gas math
           await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
           await pool.sync(overrides)
       

@@ -20,7 +20,7 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
     bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
     // ACCESS CONTROL
-    // Only the `permissionedPairAddress` may call the `executeOperation` function
+    // Only the `permissionedPoolAddress` may call the `executeOperation` function
     address permissionedPoolAddress;
 
     address public immutable override factory;
@@ -169,8 +169,8 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
     )
         external override returns (bool)
     {
-        address poolAddress = FlashLoanV1Library.poolFor(factory, token);
-        require(msg.sender == poolAddress, "Callbacks only allowed from deerfi V1 Pool");
+        // access control
+        require(msg.sender == permissionedPoolAddress, "only permissioned DeerfiV1 pool can call");
         require(sender == address(this), "Callbacks only initiated from this contract");
 
         (address origin, IERC3156FlashBorrower receiver, bytes memory userData) = 
