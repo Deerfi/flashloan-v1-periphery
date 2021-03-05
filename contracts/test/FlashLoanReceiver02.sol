@@ -6,7 +6,7 @@ import "erc3156/contracts/interfaces/IERC3156FlashBorrower.sol";
 import "erc3156/contracts/interfaces/IERC3156FlashLender.sol";
 
 contract FlashLoanReceiver02 is IERC3156FlashBorrower {
-  enum Action {NORMAL, STEAL, REENTER}
+  enum Action {NORMAL, OTHER}
 
   bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
@@ -26,10 +26,8 @@ contract FlashLoanReceiver02 is IERC3156FlashBorrower {
     flashFee = fee;
     if (action == Action.NORMAL) {
         flashBalance = IERC20(token).balanceOf(address(this));
-    } else if (action == Action.STEAL) {
-        // do nothing
-    } else if (action == Action.REENTER) {
-        flashBorrow(IERC3156FlashLender(msg.sender), token, amount * 2);
+    } else if (action == Action.OTHER) {
+        // do another
     }
     return CALLBACK_SUCCESS;
   }
@@ -37,19 +35,6 @@ contract FlashLoanReceiver02 is IERC3156FlashBorrower {
   function flashBorrow(IERC3156FlashLender lender, address token, uint256 amount) public {
     // Use this to pack arbitrary data to `onFlashLoan`
     bytes memory data = abi.encode(Action.NORMAL);
-    approveRepayment(lender, token, amount);
-    lender.flashLoan(this, token, amount, data);
-  }
-
-  function flashBorrowAndSteal(IERC3156FlashLender lender, address token, uint256 amount) public {
-    // Use this to pack arbitrary data to `onFlashLoan`
-    bytes memory data = abi.encode(Action.STEAL);
-    lender.flashLoan(this, token, amount, data);
-  }
-
-  function flashBorrowAndReenter(IERC3156FlashLender lender, address token, uint256 amount) public {
-    // Use this to pack arbitrary data to `onFlashLoan`
-    bytes memory data = abi.encode(Action.REENTER);
     approveRepayment(lender, token, amount);
     lender.flashLoan(this, token, amount, data);
   }
