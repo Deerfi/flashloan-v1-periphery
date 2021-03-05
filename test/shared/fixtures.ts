@@ -10,7 +10,9 @@ import IFlashLoanV1Pool from '../../build/IFlashLoanV1Pool.json'
 import ERC20 from '../../build/ERC20.json'
 import WETH9 from '../../build/WETH9.json'
 import FlashLoanV1Router01 from '../../build/FlashLoanV1Router01.json'
+import FlashLoanV1Router02 from '../../build/FlashLoanV1Router02.json'
 import FlashLoanReceiver from '../../build/FlashLoanReceiver.json'
+import FlashLoanReceiver02 from '../../build/FlashLoanReceiver02.json'
 
 const overrides = {
   gasLimit: 9999999
@@ -20,25 +22,30 @@ interface Router01Fixture {
   token: Contract
   WETH: Contract
   factory: Contract
+  router01: Contract
+  router02: Contract
   router: Contract
   pool: Contract
   WETHPool: Contract
-  receiver: Contract
+  receiver01: Contract
+  receiver02: Contract
 }
 
-export async function router01Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<Router01Fixture> {
+export async function V1Fixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<Router01Fixture> {
   // deploy tokens
   const token = await deployContract(wallet, ERC20, [expandTo18Decimals(10005)])
   const WETH = await deployContract(wallet, WETH9)
 
   // deploy receiver
-  const receiver = await deployContract(wallet, FlashLoanReceiver)
+  const receiver01 = await deployContract(wallet, FlashLoanReceiver)
+  const receiver02 = await deployContract(wallet, FlashLoanReceiver02)
 
   // deploy factory
   const factory = await deployContract(wallet, FlashLoanV1Factory, [wallet.address])
 
   // deploy router
   const router01 = await deployContract(wallet, FlashLoanV1Router01, [factory.address, WETH.address], overrides)
+  const router02 = await deployContract(wallet, FlashLoanV1Router02, [factory.address, WETH.address], overrides)
 
   // initialize V1
   await factory.createPool(token.address)
@@ -53,9 +60,12 @@ export async function router01Fixture(provider: Web3Provider, [wallet]: Wallet[]
     token,
     WETH,
     factory,
-    router: router01, // the default router, 01 had a minor bug
+    router01,
+    router02,
+    router: router01, // the default router
     pool,
     WETHPool,
-    receiver
+    receiver01,
+    receiver02
   }
 }
