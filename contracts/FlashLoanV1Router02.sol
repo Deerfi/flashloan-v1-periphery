@@ -1,4 +1,4 @@
-pragma solidity =0.6.6;
+pragma solidity >=0.6.2;
 
 import './interfaces/IFlashLoanV1Factory.sol';
 import './interfaces/IFlashLoanV1Pool.sol';
@@ -18,10 +18,6 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
 
     // CONSTANTS
     bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
-
-    // ACCESS CONTROL
-    // Only the `permissionedPoolAddress` may call the `executeOperation` function
-    address permissionedPoolAddress;
 
     address public immutable override factory;
     address public immutable override WETH;
@@ -144,11 +140,13 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
      * @param amount The amount of tokens lent.
      * @param userData A data parameter to be passed on to the `receiver` for any custom use.
      */
-    function flashLoan(IERC3156FlashBorrower receiver, address token, uint256 amount, bytes calldata userData) external override virtual returns(bool) {
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token, uint256 amount,
+        bytes calldata userData
+    ) external override virtual returns(bool) {
         address poolAddress = FlashLoanV1Library.poolFor(factory, token);
         require(poolAddress != address(0), "Unsupported currency");
-
-        if (permissionedPoolAddress != poolAddress) permissionedPoolAddress = poolAddress; // access control
 
         bytes memory data = abi.encode(
           msg.sender,
@@ -166,11 +164,8 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
         uint256 fee,
         address sender,
         bytes calldata data
-    )
-        external override returns (bool)
-    {
-        // access control
-        require(msg.sender == permissionedPoolAddress, "only permissioned DeerfiV1 pool can call");
+    ) external override returns (bool) {
+        require(msg.sender == FlashLoanV1Library.poolFor(factory, token), "only DeerfiV1 pool can call");
         require(sender == address(this), "Callbacks only initiated from this contract");
 
         (address origin, IERC3156FlashBorrower receiver, bytes memory userData) = 

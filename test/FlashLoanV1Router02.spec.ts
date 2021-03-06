@@ -143,7 +143,7 @@ describe('FlashLoanV1Router02', () => {
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
       const tx = await receiver.flashBorrow(router.address, token.address, loanAmount)
       const receipt = await tx.wait()
-      expect(receipt.gasUsed).to.eq(228854)
+      expect(receipt.gasUsed).to.eq(206785)
     })
   })
 })
