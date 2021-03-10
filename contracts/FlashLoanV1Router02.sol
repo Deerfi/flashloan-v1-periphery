@@ -142,7 +142,8 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
      */
     function flashLoan(
         IERC3156FlashBorrower receiver,
-        address token, uint256 amount,
+        address token,
+        uint256 amount,
         bytes calldata userData
     ) external override virtual returns(bool) {
         address poolAddress = FlashLoanV1Library.poolFor(factory, token);

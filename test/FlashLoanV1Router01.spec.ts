@@ -327,7 +327,7 @@ describe('FlashLoanV1Router01', () => {
             expect(await WETH.balanceOf(wallet.address)).to.eq(totalSupplyToken.sub(loanAmount).sub(premiumAmount))
         })
       
-        it('flashloan:gas', async () => {
+        it('flashloan: gas', async () => {
           const loanAmount = expandTo18Decimals(10000)
           const premiumAmount = expandTo18Decimals(5)
       
