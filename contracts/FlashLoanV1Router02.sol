@@ -172,6 +172,7 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
         (address origin, IERC3156FlashBorrower receiver, bytes memory userData) = 
             abi.decode(data, (address, IERC3156FlashBorrower, bytes));
 
+        (address initiator) = abi.decode(userData, (address));
         // Send the tokens to the original receiver using the ERC-3156 interface
         IERC20(token).transfer(address(receiver), amount);
         // do whatever the user wants
@@ -179,8 +180,8 @@ contract FlashLoanV1Router02 is IFlashLoanV1Router, IERC3156FlashLender, IFlashL
             receiver.onFlashLoan(origin, token, amount, fee, userData) == CALLBACK_SUCCESS,
             "Callback failed"
         );
-        // retrieve the borrowed amount plus fee from the receiver and send it to the deerfi pool
-        IERC20(token).transferFrom(address(receiver), msg.sender, amount.add(fee));
+        // retrieve the borrowed amount plus fee from the initiator and send it to the deerfi pool
+        IERC20(token).transferFrom(address(initiator), msg.sender, amount.add(fee));
 
         return true;
     }

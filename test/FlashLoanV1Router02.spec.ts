@@ -1,7 +1,7 @@
 import chai, { expect } from 'chai'
 import { Contract } from 'ethers'
 import { Zero } from 'ethers/constants'
-import { bigNumberify } from 'ethers/utils'
+import { bigNumberify, defaultAbiCoder } from 'ethers/utils'
 import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
 
 import { expandTo18Decimals, mineBlock } from './shared/utilities'
@@ -47,8 +47,10 @@ describe('FlashLoanV1Router02', () => {
       const loanAmount = expandTo18Decimals(10000)
       const premiumAmount = await router.flashFee(token.address, loanAmount)
 
+      await token.approve(router.address, expandTo18Decimals(10005))
+
       await token.transfer(pool.address, loanAmount)
-      await token.transfer(receiver.address, premiumAmount)
+      await token.transfer(wallet.address, premiumAmount)
 
       await expect(receiver.flashBorrow(router.address, token.address, loanAmount))
         .to.emit(token, 'Transfer')
@@ -56,7 +58,7 @@ describe('FlashLoanV1Router02', () => {
         .to.emit(token, 'Transfer')
         .withArgs(router.address, receiver.address, loanAmount)
         .to.emit(token, 'Transfer')
-        .withArgs(receiver.address, pool.address, loanAmount.add(premiumAmount))
+        .withArgs(wallet.address, pool.address, loanAmount.add(premiumAmount))
         .to.emit(pool, 'Sync')
         .withArgs(loanAmount.add(premiumAmount))
         .to.emit(pool, 'FlashLoan')
@@ -75,9 +77,11 @@ describe('FlashLoanV1Router02', () => {
       const premiumAmount = await router.flashFee(token.address, loanAmount)
       const ETHAmount = expandTo18Decimals(10005)
 
+      await WETH.approve(router.address, expandTo18Decimals(10005))
+
       await WETH.deposit({ value: ETHAmount })
       await WETH.transfer(WETHPool.address, loanAmount)
-      await WETH.transfer(receiver.address, premiumAmount)
+      await WETH.transfer(wallet.address, premiumAmount)
 
       await expect(receiver.flashBorrow(router.address, WETH.address, loanAmount))
         .to.emit(WETH, 'Transfer')
@@ -85,7 +89,7 @@ describe('FlashLoanV1Router02', () => {
         .to.emit(WETH, 'Transfer')
         .withArgs(router.address, receiver.address, loanAmount)
         .to.emit(WETH, 'Transfer')
-        .withArgs(receiver.address, WETHPool.address, loanAmount.add(premiumAmount))
+        .withArgs(wallet.address, WETHPool.address, loanAmount.add(premiumAmount))
         .to.emit(WETHPool, 'Sync')
         .withArgs(loanAmount.add(premiumAmount))
         .to.emit(WETHPool, 'FlashLoan')
@@ -105,11 +109,13 @@ describe('FlashLoanV1Router02', () => {
       const one = bigNumberify(1)
       const maxFlashLoanAmountAfter = expandTo18Decimals(10005)
 
+      await token.approve(router.address, expandTo18Decimals(10005))
+
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
       await pool.sync(overrides)
 
       await token.transfer(pool.address, loanAmount)
-      await token.transfer(receiver.address, premiumAmount)
+      await token.transfer(wallet.address, premiumAmount)
 
       const maxFlashLoanAmount = await router.maxFlashLoan(token.address)
 
@@ -135,15 +141,38 @@ describe('FlashLoanV1Router02', () => {
       const loanAmount = expandTo18Decimals(10000)
       const premiumAmount = router.flashFee(token.address, loanAmount)
 
+      await token.approve(router.address, expandTo18Decimals(10005))
+
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
       await pool.sync(overrides)
 
       await token.transfer(pool.address, loanAmount)
-      await token.transfer(receiver.address, premiumAmount)
+      await token.transfer(wallet.address, premiumAmount)
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
       const tx = await receiver.flashBorrow(router.address, token.address, loanAmount)
       const receipt = await tx.wait()
-      expect(receipt.gasUsed).to.eq(206785)
+      expect(receipt.gasUsed).to.eq(167721)
+    })
+
+    it('flashloan: router', async () => {
+      const loanAmount = expandTo18Decimals(10000)
+      const premiumAmount = router.flashFee(token.address, loanAmount)
+
+      const data = defaultAbiCoder.encode(
+        ['address'],
+        [wallet.address]
+      )
+
+      await token.approve(router.address, expandTo18Decimals(10005))
+
+      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
+      await pool.sync(overrides)
+
+      await token.transfer(pool.address, loanAmount)
+      await token.transfer(wallet.address, premiumAmount)
+      const tx = await router.flashLoan(receiver.address, token.address, loanAmount, data)
+      const receipt = await tx.wait()
+      expect(receipt.gasUsed).to.eq(166101)
     })
   })
 })
